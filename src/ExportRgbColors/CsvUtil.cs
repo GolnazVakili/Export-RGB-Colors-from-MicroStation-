@@ -6,34 +6,60 @@ using System.Text;
 namespace ExportRgbColors
 {
     /// <summary>
-    /// One exported color row. Layer is blank for color-table entries and filled
-    /// for ByLevel / level colors.
+    /// One exported color row. ColorIndex is always present (0–255 for the color
+    /// table, −1 for ByLevel). Layer is blank unless the row belongs to a level.
     /// </summary>
     public sealed class ColorCsvRow
     {
         public string ColorIndex { get; set; }
-        public string Layer { get; set; }
         public int R { get; set; }
         public int G { get; set; }
         public int B { get; set; }
+        public string Layer { get; set; }
     }
 
     /// <summary>
-    /// CSV formatting for ColorIndex, Layer, R, G, B. Kept free of Bentley types
+    /// CSV formatting for ColorIndex, R, G, B, Layer. Kept free of Bentley types
     /// so it can be unit-tested without MicroStation.
     /// </summary>
     public static class CsvUtil
     {
-        public static readonly string[] Header = { "ColorIndex", "Layer", "R", "G", "B" };
+        public const int ByLevelIndex = -1;
+
+        public static readonly string[] Header = { "ColorIndex", "R", "G", "B", "Layer" };
+
+        public static ColorCsvRow TableRow(int colorIndex, int r, int g, int b)
+        {
+            return new ColorCsvRow
+            {
+                ColorIndex = colorIndex.ToString(CultureInfo.InvariantCulture),
+                R = r,
+                G = g,
+                B = b,
+                Layer = string.Empty
+            };
+        }
+
+        public static ColorCsvRow ByLevelRow(string layer, int r, int g, int b)
+        {
+            return new ColorCsvRow
+            {
+                ColorIndex = ByLevelIndex.ToString(CultureInfo.InvariantCulture),
+                R = r,
+                G = g,
+                B = b,
+                Layer = layer ?? string.Empty
+            };
+        }
 
         public static string FormatRow(ColorCsvRow row)
         {
             return string.Join(",",
                 Escape(row.ColorIndex ?? string.Empty),
-                Escape(row.Layer ?? string.Empty),
                 row.R.ToString(CultureInfo.InvariantCulture),
                 row.G.ToString(CultureInfo.InvariantCulture),
-                row.B.ToString(CultureInfo.InvariantCulture));
+                row.B.ToString(CultureInfo.InvariantCulture),
+                Escape(row.Layer ?? string.Empty));
         }
 
         public static void Write(string path, IEnumerable<ColorCsvRow> rows)

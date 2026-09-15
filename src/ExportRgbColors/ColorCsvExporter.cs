@@ -94,30 +94,15 @@ namespace ExportRgbColors
             int skipped = 0;
             for (uint i = 0; i < ColorTableSize; i++)
             {
-                int colorIndex;
                 byte r, g, b;
-                if (!ColorResolver.TryResolve(dgnFile, i, out colorIndex, out r, out g, out b, out _))
+                if (!ColorResolver.TryResolve(dgnFile, i, out _, out r, out g, out b, out _))
                 {
                     skipped++;
-                    rows.Add(new ColorCsvRow
-                    {
-                        ColorIndex = i.ToString(),
-                        Layer = string.Empty,
-                        R = 0,
-                        G = 0,
-                        B = 0
-                    });
+                    rows.Add(CsvUtil.TableRow((int)i, 0, 0, 0));
                     continue;
                 }
 
-                rows.Add(new ColorCsvRow
-                {
-                    ColorIndex = colorIndex.ToString(),
-                    Layer = string.Empty,
-                    R = r,
-                    G = g,
-                    B = b
-                });
+                rows.Add(CsvUtil.TableRow((int)i, r, g, b));
             }
 
             return skipped;
@@ -137,25 +122,22 @@ namespace ExportRgbColors
                     continue;
 
                 string layerName = handle.Name ?? string.Empty;
+                if (string.IsNullOrEmpty(layerName))
+                    continue;
+
                 LevelDefinitionColor levelColor = handle.GetByLevelColor();
                 uint colorId = ColorResolver.GetLevelColorId(levelColor);
 
-                int colorIndex;
                 byte r, g, b;
-                if (!ColorResolver.TryResolve(dgnFile, colorId, out colorIndex, out r, out g, out b, out _))
+                if (!ColorResolver.TryResolve(dgnFile, colorId, out _, out r, out g, out b, out _))
                 {
                     skipped++;
                     continue;
                 }
 
-                rows.Add(new ColorCsvRow
-                {
-                    ColorIndex = colorIndex.ToString(),
-                    Layer = layerName,
-                    R = r,
-                    G = g,
-                    B = b
-                });
+                // Index dialog Color −1 is ByLevel: keep ColorIndex −1, RGB of this
+                // level, and the layer name. Shared colors still get one row per level.
+                rows.Add(CsvUtil.ByLevelRow(layerName, r, g, b));
             }
 
             return skipped;

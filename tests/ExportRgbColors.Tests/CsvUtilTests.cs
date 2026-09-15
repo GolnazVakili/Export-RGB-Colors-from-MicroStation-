@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Xunit;
 
@@ -8,54 +9,58 @@ namespace ExportRgbColors.Tests
     public sealed class CsvUtilTests
     {
         [Fact]
-        public void Header_Is_ColorIndex_Layer_RGB()
+        public void Header_Is_ColorIndex_RGB_Layer()
         {
-            Assert.Equal(new[] { "ColorIndex", "Layer", "R", "G", "B" }, CsvUtil.Header);
+            Assert.Equal(new[] { "ColorIndex", "R", "G", "B", "Layer" }, CsvUtil.Header);
         }
 
         [Fact]
-        public void ColorTableRow_Leaves_Layer_Blank()
+        public void ColorTableRow_Translates_Index_To_Rgb_And_Leaves_Layer_Blank()
         {
-            string line = CsvUtil.FormatRow(new ColorCsvRow
-            {
-                ColorIndex = "3",
-                Layer = "",
-                R = 0,
-                G = 0,
-                B = 255
-            });
-
-            Assert.Equal("3,,0,0,255", line);
+            string line = CsvUtil.FormatRow(CsvUtil.TableRow(3, 0, 0, 255));
+            Assert.Equal("3,0,0,255,", line);
         }
 
         [Fact]
-        public void ByLevelRow_Includes_Layer_Name()
+        public void ByLevelRow_Uses_ColorIndex_Minus_One_And_Layer_Name()
         {
-            string line = CsvUtil.FormatRow(new ColorCsvRow
-            {
-                ColorIndex = "4",
-                Layer = "EQPM",
-                R = 0,
-                G = 0,
-                B = 255
-            });
+            string line = CsvUtil.FormatRow(CsvUtil.ByLevelRow("EQPM", 0, 0, 255));
+            Assert.Equal("-1,0,0,255,EQPM", line);
+        }
 
-            Assert.Equal("4,EQPM,0,0,255", line);
+        [Fact]
+        public void Shared_Color_Writes_One_ByLevel_Row_Per_Level()
+        {
+            var rows = new[]
+            {
+                CsvUtil.TableRow(1, 0, 0, 255),
+                CsvUtil.ByLevelRow("EQPM", 0, 0, 255),
+                CsvUtil.ByLevelRow("R-LITE", 0, 0, 255)
+            };
+
+            string[] lines = rows.Select(CsvUtil.FormatRow).ToArray();
+            Assert.Equal("1,0,0,255,", lines[0]);
+            Assert.Equal("-1,0,0,255,EQPM", lines[1]);
+            Assert.Equal("-1,0,0,255,R-LITE", lines[2]);
+        }
+
+        [Fact]
+        public void Color_Table_Does_Not_Emit_Minus_One_Index()
+        {
+            for (int i = 0; i <= 255; i++)
+            {
+                ColorCsvRow row = CsvUtil.TableRow(i, 1, 2, 3);
+                Assert.Equal(i.ToString(), row.ColorIndex);
+                Assert.Equal(string.Empty, row.Layer);
+                Assert.NotEqual("-1", row.ColorIndex);
+            }
         }
 
         [Fact]
         public void Layer_With_Comma_Is_Quoted()
         {
-            string line = CsvUtil.FormatRow(new ColorCsvRow
-            {
-                ColorIndex = "1",
-                Layer = "R-LITE, EQPM",
-                R = 255,
-                G = 0,
-                B = 0
-            });
-
-            Assert.Equal("1,\"R-LITE, EQPM\",255,0,0", line);
+            string line = CsvUtil.FormatRow(CsvUtil.ByLevelRow("R-LITE, EQPM", 255, 0, 0));
+            Assert.Equal("-1,255,0,0,\"R-LITE, EQPM\"", line);
         }
 
         [Fact]
@@ -66,8 +71,8 @@ namespace ExportRgbColors.Tests
             {
                 var rows = new List<ColorCsvRow>
                 {
-                    new ColorCsvRow { ColorIndex = "0", Layer = "", R = 0, G = 0, B = 0 },
-                    new ColorCsvRow { ColorIndex = "1", Layer = "Default", R = 0, G = 0, B = 255 }
+                    CsvUtil.TableRow(0, 0, 0, 0),
+                    CsvUtil.ByLevelRow("Default", 0, 0, 255)
                 };
 
                 CsvUtil.Write(path, rows);
@@ -80,9 +85,9 @@ namespace ExportRgbColors.Tests
 
                 string text = File.ReadAllText(path, new UTF8Encoding(true));
                 string[] lines = text.Replace("\r\n", "\n").TrimEnd().Split('\n');
-                Assert.Equal("ColorIndex,Layer,R,G,B", lines[0]);
-                Assert.Equal("0,,0,0,0", lines[1]);
-                Assert.Equal("1,Default,0,0,255", lines[2]);
+                Assert.Equal("ColorIndex,R,G,B,Layer", lines[0]);
+                Assert.Equal("0,0,0,0,", lines[1]);
+                Assert.Equal("-1,0,0,255,Default", lines[2]);
             }
             finally
             {

@@ -1,29 +1,32 @@
 # Export RGB Colors from MicroStation
 
-MicroStation CONNECT / 2023+ C# add-in that writes the active DGN **color table** and **level (layer) ByLevel colors** to a CSV file.
+MicroStation CONNECT / 2023+ C# add-in that translates the active DGN **color table** (and ByLevel / level colors) to RGB in a CSV file.
 
-CSV columns:
+CSV columns on **every** row:
 
 ```text
-ColorIndex,Layer,R,G,B
+ColorIndex,R,G,B,Layer
 ```
 
-| Column | Color table rows | Level / layer rows |
+| Column | Color table rows | ByLevel / level rows |
 | --- | --- | --- |
-| `ColorIndex` | `0`–`255` | ByLevel color index used by that level |
-| `Layer` | blank | Level name |
-| `R`, `G`, `B` | RGB 0–255 | RGB of that level’s ByLevel color |
+| `ColorIndex` | `0`–`255` (required) | **`-1`** (the Index dialog ByLevel value; required) |
+| `R`, `G`, `B` | RGB for that table index | RGB of that level’s ByLevel color |
+| `Layer` | blank | Level name (only when a level exists) |
+
+There is **no** color-table row for −1. Color −1 in the CONNECT Color / Index dialog is ByLevel; that RGB is written on a **level row** with `ColorIndex,-1` and the layer name.
+
+If several levels share one color, the file has **one row per level** (`ColorIndex` −1, same RGB, different `Layer`).
 
 Example:
 
 ```csv
-ColorIndex,Layer,R,G,B
-0,,0,0,0
-1,,0,0,255
-4,EQPM,0,0,255
+ColorIndex,R,G,B,Layer
+0,0,0,0,
+1,0,0,255,
+-1,0,0,255,EQPM
+-1,0,0,255,R-LITE
 ```
-
-Color **−1** in the CONNECT Color / Index dialog is **ByLevel**. That is not a table slot. The RGB you see for ByLevel is the active (or named) level’s color, and it is exported on a **level row** with `Layer` filled in.
 
 ## Requirements
 
@@ -71,7 +74,7 @@ If you keep the DLL somewhere else, append that folder to `MS_ADDINPATH` (a samp
 
 | Key-in | Action |
 | --- | --- |
-| `RGBCSV EXPORT` | Save dialog, then export color table + level colors |
+| `RGBCSV EXPORT` | Save dialog, then export color table + ByLevel rows |
 | `RGBCSV EXPORT C:\temp\R-LITE-EQPM-colors.csv` | Export to that path (no dialog) |
 | `RGBCSV DIALOG` | Small form: path, include color table, include levels |
 
@@ -79,8 +82,8 @@ The Message Center reports how many color-table and level rows were written.
 
 ## What is exported
 
-1. **Color table** — 256 rows, indices `0`–`255`, `Layer` empty. RGB comes from `DgnColorMap.ExtractElementColorInfo` for the active file.
-2. **Levels** — one row per valid level in the file’s level cache. `Layer` is the level name; `ColorIndex` and RGB are that level’s ByLevel color (`LevelHandle.GetByLevelColor`).
+1. **Color table** — 256 rows, `ColorIndex` `0`–`255`, RGB from `DgnColorMap.ExtractElementColorInfo`, `Layer` empty.
+2. **ByLevel** — one row per named level. `ColorIndex` is `-1`, RGB is that level’s ByLevel color (`LevelHandle.GetByLevelColor`), `Layer` is the level name.
 
 UTF-8 with BOM so Excel opens the file correctly. Level names that contain commas are quoted.
 

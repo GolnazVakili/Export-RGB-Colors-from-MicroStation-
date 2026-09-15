@@ -65,7 +65,7 @@ namespace ExportRgbColors
             {
                 AutoSize = true,
                 Checked = true,
-                Text = "Color table (indices 0–255, Layer blank)",
+                Text = "Color table (ColorIndex 0–255 → RGB, Layer blank)",
                 Location = new Point(80, 52)
             };
 
@@ -73,7 +73,7 @@ namespace ExportRgbColors
             {
                 AutoSize = true,
                 Checked = true,
-                Text = "Level / layer ByLevel colors (Layer = level name)",
+                Text = "ByLevel rows (ColorIndex −1, Layer = level name)",
                 Location = new Point(80, 78)
             };
 
@@ -81,7 +81,7 @@ namespace ExportRgbColors
             {
                 AutoSize = true,
                 ForeColor = Color.DimGray,
-                Text = "Color −1 in the Color dialog is ByLevel; those RGB values appear on level rows.",
+                Text = "Color −1 is ByLevel: ColorIndex −1, that level’s RGB, and the layer name.",
                 Location = new Point(80, 104)
             };
 
