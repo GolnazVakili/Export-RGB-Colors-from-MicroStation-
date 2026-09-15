@@ -1,0 +1,99 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>ExportRgbColors</RootNamespace>
+    <AssemblyName>ExportRgbColors</AssemblyName>
+    <OutputType>Library</OutputType>
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>latest</LangVersion>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <Product>Export RGB Colors from MicroStation</Product>
+    <Description>MicroStation CONNECT/2023+ add-in that exports color-table and level RGB values to CSV.</Description>
+    <Authors>Golnaz Vakili</Authors>
+    <Version>1.0.0</Version>
+    <!--
+      Point this at the MicroStation folder that contains ustation.dll, or set
+      any of: MicroStationDir, MS, MSMDIR, MICROSTATION_LOCATION.
+      Example:
+        msbuild /p:MicroStationDir="C:\Program Files\Bentley\MicroStation 2024\MicroStation"
+    -->
+    <MicroStationDir Condition="'$(MicroStationDir)' == '' and '$(MS)' != ''">$(MS)</MicroStationDir>
+    <MicroStationDir Condition="'$(MicroStationDir)' == '' and '$(MSMDIR)' != ''">$(MSMDIR)</MicroStationDir>
+    <MicroStationDir Condition="'$(MicroStationDir)' == '' and '$(MICROSTATION_LOCATION)' != ''">$(MICROSTATION_LOCATION)</MicroStationDir>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MicroStationDir)' == ''">
+    <MicroStationDir Condition="Exists('C:\Program Files\Bentley\MicroStation 2025\MicroStation\ustation.dll')">C:\Program Files\Bentley\MicroStation 2025\MicroStation</MicroStationDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(MicroStationDir)' == ''">
+    <MicroStationDir Condition="Exists('C:\Program Files\Bentley\MicroStation 2024\MicroStation\ustation.dll')">C:\Program Files\Bentley\MicroStation 2024\MicroStation</MicroStationDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(MicroStationDir)' == ''">
+    <MicroStationDir Condition="Exists('C:\Program Files\Bentley\MicroStation 2023\MicroStation\ustation.dll')">C:\Program Files\Bentley\MicroStation 2023\MicroStation</MicroStationDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(MicroStationDir)' == ''">
+    <MicroStationDir Condition="Exists('C:\Program Files\Bentley\MicroStation CONNECT Edition\MicroStation\ustation.dll')">C:\Program Files\Bentley\MicroStation CONNECT Edition\MicroStation</MicroStationDir>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DgnPlatformNet Condition="Exists('$(MicroStationDir)\Bentley.DgnPlatformNET.dll')">$(MicroStationDir)\Bentley.DgnPlatformNET.dll</DgnPlatformNet>
+    <DgnPlatformNet Condition="'$(DgnPlatformNet)' == '' and Exists('$(MicroStationDir)\assemblies\Bentley.DgnPlatformNET.dll')">$(MicroStationDir)\assemblies\Bentley.DgnPlatformNET.dll</DgnPlatformNet>
+    <GeometryNet Condition="Exists('$(MicroStationDir)\Bentley.GeometryNET.dll')">$(MicroStationDir)\Bentley.GeometryNET.dll</GeometryNet>
+    <GeometryNet Condition="'$(GeometryNet)' == '' and Exists('$(MicroStationDir)\assemblies\Bentley.GeometryNET.dll')">$(MicroStationDir)\assemblies\Bentley.GeometryNET.dll</GeometryNet>
+    <GeneralDll Condition="Exists('$(MicroStationDir)\assemblies\ECFramework\Bentley.General.1.0.dll')">$(MicroStationDir)\assemblies\ECFramework\Bentley.General.1.0.dll</GeneralDll>
+    <GeneralDll Condition="'$(GeneralDll)' == '' and Exists('$(MicroStationDir)\assemblies\Bentley.General.1.0.dll')">$(MicroStationDir)\assemblies\Bentley.General.1.0.dll</GeneralDll>
+    <MicroStationDll Condition="Exists('$(MicroStationDir)\assemblies\bentley.microstation.dll')">$(MicroStationDir)\assemblies\bentley.microstation.dll</MicroStationDll>
+    <MicroStationDll Condition="'$(MicroStationDll)' == '' and Exists('$(MicroStationDir)\assemblies\Bentley.MicroStation.dll')">$(MicroStationDir)\assemblies\Bentley.MicroStation.dll</MicroStationDll>
+    <MicroStationInterfaces Condition="Exists('$(MicroStationDir)\assemblies\bentley.microstation.interfaces.1.0.dll')">$(MicroStationDir)\assemblies\bentley.microstation.interfaces.1.0.dll</MicroStationInterfaces>
+    <MicroStationInterfaces Condition="'$(MicroStationInterfaces)' == '' and Exists('$(MicroStationDir)\assemblies\Bentley.MicroStation.Interfaces.1.0.dll')">$(MicroStationDir)\assemblies\Bentley.MicroStation.Interfaces.1.0.dll</MicroStationInterfaces>
+    <InteropDll Condition="Exists('$(MicroStationDir)\assemblies\bentley.interop.microstationdgn.dll')">$(MicroStationDir)\assemblies\bentley.interop.microstationdgn.dll</InteropDll>
+    <InteropDll Condition="'$(InteropDll)' == '' and Exists('$(MicroStationDir)\assemblies\Bentley.Interop.MicroStationDGN.dll')">$(MicroStationDir)\assemblies\Bentley.Interop.MicroStationDGN.dll</InteropDll>
+  </PropertyGroup>
+
+  <Target Name="EnsureMicroStationDir" BeforeTargets="ResolveAssemblyReferences;CoreCompile">
+    <Error
+      Condition="'$(MicroStationDir)' == '' or !Exists('$(MicroStationDir)\ustation.dll')"
+      Text="MicroStation was not found. Install MicroStation CONNECT/2023+ and rebuild with /p:MicroStationDir=&quot;C:\Program Files\Bentley\&lt;your version&gt;\MicroStation&quot; (the folder that contains ustation.dll)." />
+  </Target>
+
+  <ItemGroup>
+    <Reference Include="ustation">
+      <HintPath>$(MicroStationDir)\ustation.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Bentley.DgnPlatformNET" Condition="'$(DgnPlatformNet)' != ''">
+      <HintPath>$(DgnPlatformNet)</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Bentley.GeometryNET" Condition="'$(GeometryNet)' != ''">
+      <HintPath>$(GeometryNet)</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Bentley.General.1.0" Condition="'$(GeneralDll)' != ''">
+      <HintPath>$(GeneralDll)</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Bentley.MicroStation" Condition="'$(MicroStationDll)' != ''">
+      <HintPath>$(MicroStationDll)</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Bentley.MicroStation.Interfaces.1.0" Condition="'$(MicroStationInterfaces)' != ''">
+      <HintPath>$(MicroStationInterfaces)</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Bentley.Interop.MicroStationDGN" Condition="'$(InteropDll)' != ''">
+      <HintPath>$(InteropDll)</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Commands.xml">
+      <LogicalName>CommandTable.xml</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+</Project>

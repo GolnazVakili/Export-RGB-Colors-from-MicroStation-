@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<KeyinTree xmlns="http://www.bentley.com/schemas/1.0/MicroStation/AddIn/KeyinTree.xsd">
+  <RootKeyinTable ID="root">
+    <Keyword SubtableRef="Commands" CommandClass="MacroCommand" CommandWord="RGBCSV">
+      <Options Required="true" TryParse="true" />
+    </Keyword>
+  </RootKeyinTable>
+  <SubKeyinTables>
+    <KeyinTable ID="Commands">
+      <Keyword CommandWord="EXPORT" />
+      <Keyword CommandWord="DIALOG" />
+    </KeyinTable>
+  </SubKeyinTables>
+  <KeyinHandlers>
+    <KeyinHandler Keyin="RGBCSV EXPORT" Function="ExportRgbColors.KeyinCommands.Export" />
+    <KeyinHandler Keyin="RGBCSV DIALOG" Function="ExportRgbColors.KeyinCommands.Dialog" />
+  </KeyinHandlers>
+</KeyinTree>
