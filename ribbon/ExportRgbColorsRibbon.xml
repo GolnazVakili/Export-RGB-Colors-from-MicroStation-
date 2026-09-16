@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<RibbonItems xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="RibbonDefinitions.xsd">
+  <!-- Drawing workflow already has an Automation tab. Adding this TabRef plus
+       a Tab named Mstn.Drawing.Automation merges our group onto that tab. -->
+  <TabCollections>
+    <TabCollection Name="Mstn.Drawing">
+      <TabRef Name="Mstn.Drawing.Automation" Priority="90000">
+      </TabRef>
+    </TabCollection>
+  </TabCollections>
+  <Tabs>
+    <Tab Name="Mstn.Drawing.Automation" Priority="900">
+      <Label>Automation</Label>
+      <TabItems>
+        <GroupRef Name="ExportRgbColors.Group" Priority="20000">
+        </GroupRef>
+      </TabItems>
+    </Tab>
+  </Tabs>
+  <Groups>
+    <Group GroupZone="Primary" Name="ExportRgbColors.Group" PanelType="Collapsible" Priority="200">
+      <Label>RGB Colors</Label>
+      <Icon Type="NamedIcon">
+        <NamedIcon>ColorTable</NamedIcon>
+      </Icon>
+      <GroupItems>
+        <ButtonRef Name="ExportRgbColors.Export" Priority="10000">
+          <ButtonParams CollapseToSmall="WhenGroupIsSmall" Size="Large">
+            <AccessText>ER</AccessText>
+            <PopupAccessText>e</PopupAccessText>
+          </ButtonParams>
+        </ButtonRef>
+      </GroupItems>
+    </Group>
+  </Groups>
+  <Buttons>
+    <Button Name="ExportRgbColors.Export" Priority="100">
+      <Label>Export RGB Colors</Label>
+      <Description>Export every color-table ColorIndex with RGB to CSV</Description>
+      <ButtonParams CollapseToSmall="WhenGroupIsSmall" Size="Large">
+      </ButtonParams>
+      <ButtonData>
+        <CommandData Type="UserKeyinCommand">
+          <UserKeyinCommand>
+            <Keyin>[RgbCsvExport]RGBCSV DIALOG</Keyin>
+            <Icon Type="NamedIcon">
+              <NamedIcon>ColorTable</NamedIcon>
+            </Icon>
+          </UserKeyinCommand>
+        </CommandData>
+      </ButtonData>
+    </Button>
+  </Buttons>
+</RibbonItems>

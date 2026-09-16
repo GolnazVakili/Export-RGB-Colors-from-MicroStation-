@@ -21,18 +21,6 @@ namespace ExportRgbColors
 
         protected override int Run(string[] commandLine)
         {
-            try
-            {
-                MessageCenter.Instance.ShowInfoMessage(
-                    "Export RGB Colors add-in loaded",
-                    "Key-in RGBCSV DIALOG to export ColorIndex and RGB together.",
-                    false);
-            }
-            catch
-            {
-                // Message Center is unavailable during some load paths.
-            }
-
             return 0;
         }
     }

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserNamedCommands xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <UserNamedCommand>
+    <Name>ExportRgbColors.Export</Name>
+    <Label>Export RGB Colors</Label>
+    <Description>Export every color-table ColorIndex with RGB to CSV</Description>
+    <Keyin>[RgbCsvExport]RGBCSV DIALOG</Keyin>
+    <IconName>ColorTable</IconName>
+  </UserNamedCommand>
+</UserNamedCommands>
