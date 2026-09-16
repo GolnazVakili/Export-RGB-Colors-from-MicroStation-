@@ -6,7 +6,8 @@ using System.Windows.Forms;
 namespace ExportRgbColors
 {
     /// <summary>
-    /// Simple CONNECT-style export dialog: path, color table, and level colors.
+    /// Simple CONNECT-style export dialog. Color table (all codes) is on by
+    /// default; ByLevel / layer rows are optional.
     /// </summary>
     internal sealed class ExportForm : Form
     {
@@ -36,7 +37,7 @@ namespace ExportRgbColors
             MaximizeBox = false;
             MinimizeBox = false;
             StartPosition = FormStartPosition.CenterScreen;
-            ClientSize = new Size(520, 176);
+            ClientSize = new Size(560, 196);
             Font = new Font("Segoe UI", 9F);
 
             var pathLabel = new Label
@@ -49,14 +50,14 @@ namespace ExportRgbColors
             _pathBox = new TextBox
             {
                 Location = new Point(80, 14),
-                Size = new Size(332, 23),
+                Size = new Size(372, 23),
                 Text = suggestedPath ?? string.Empty
             };
 
             var browse = new Button
             {
                 Text = "Browse…",
-                Location = new Point(418, 13),
+                Location = new Point(458, 13),
                 Size = new Size(86, 25)
             };
             browse.Click += OnBrowse;
@@ -65,23 +66,24 @@ namespace ExportRgbColors
             {
                 AutoSize = true,
                 Checked = true,
-                Text = "Color table (ColorIndex 0–255 → RGB, Layer blank)",
+                Text = "All color codes (table 0–255 → RGB, including unused)",
                 Location = new Point(80, 52)
             };
 
             _levelsBox = new CheckBox
             {
                 AutoSize = true,
-                Checked = true,
-                Text = "ByLevel rows (ColorIndex −1, Layer = level name)",
+                Checked = false,
+                Text = "Also append ByLevel rows (ColorIndex −1 + layer name)",
                 Location = new Point(80, 78)
             };
 
             var hint = new Label
             {
                 AutoSize = true,
+                MaximumSize = new Size(460, 0),
                 ForeColor = Color.DimGray,
-                Text = "Color −1 is ByLevel: ColorIndex −1, that level’s RGB, and the layer name.",
+                Text = "Exports every attached color-table index with RGB, not only colors assigned to a layer.",
                 Location = new Point(80, 104)
             };
 
@@ -89,7 +91,7 @@ namespace ExportRgbColors
             {
                 Text = "Export",
                 DialogResult = DialogResult.OK,
-                Location = new Point(338, 136),
+                Location = new Point(378, 156),
                 Size = new Size(86, 27)
             };
             export.Click += OnExportClick;
@@ -98,7 +100,7 @@ namespace ExportRgbColors
             {
                 Text = "Cancel",
                 DialogResult = DialogResult.Cancel,
-                Location = new Point(430, 136),
+                Location = new Point(470, 156),
                 Size = new Size(74, 27)
             };
 
@@ -140,7 +142,7 @@ namespace ExportRgbColors
 
             if (!IncludeColorTable && !IncludeLevels)
             {
-                MessageBox.Show(this, "Select at least one of color table or level colors.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(this, "Select the color table (all color codes) and/or level colors.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 DialogResult = DialogResult.None;
             }
         }

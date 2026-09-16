@@ -21,7 +21,7 @@ namespace ExportRgbColors
 
     internal static class ColorCsvExporter
     {
-        public const int ColorTableSize = 256;
+        public const int ColorTableSize = ColorTableCsvBuilder.ColorTableSize;
 
         public static ExportResult Export(string csvPath, bool includeColorTable, bool includeLevels)
         {
@@ -32,9 +32,14 @@ namespace ExportRgbColors
 
             var rows = new List<ColorCsvRow>();
             int skipped = 0;
+            int tableRows = 0;
 
             if (includeColorTable)
+            {
+                int before = rows.Count;
                 skipped += AppendColorTable(dgnFile, rows);
+                tableRows = rows.Count - before;
+            }
 
             if (includeLevels)
                 skipped += AppendLevelColors(dgnFile, dgnModel, rows);
@@ -48,8 +53,8 @@ namespace ExportRgbColors
             return new ExportResult
             {
                 Path = csvPath,
-                ColorTableRows = includeColorTable ? ColorTableSize : 0,
-                LevelRows = rows.Count - (includeColorTable ? ColorTableSize : 0),
+                ColorTableRows = tableRows,
+                LevelRows = rows.Count - tableRows,
                 Skipped = skipped
             };
         }
@@ -63,7 +68,7 @@ namespace ExportRgbColors
                 name = "colors";
             if (string.IsNullOrEmpty(folder) || folder.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
                 folder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            return Path.Combine(folder, name + "-colors.csv");
+            return Path.Combine(folder, name + "-all-color-codes.csv");
         }
 
         public static string GetActiveDgnPath(DgnFile dgnFile)
@@ -91,20 +96,29 @@ namespace ExportRgbColors
 
         private static int AppendColorTable(DgnFile dgnFile, List<ColorCsvRow> rows)
         {
+            int[] packed;
+            bool haveTable = AttachedColorTable.TryReadPackedColors(out packed);
+
+            var complete = new int[ColorTableSize];
             int skipped = 0;
-            for (uint i = 0; i < ColorTableSize; i++)
+
+            for (int i = 0; i < ColorTableSize; i++)
             {
-                byte r, g, b;
-                if (!ColorResolver.TryResolve(dgnFile, i, out _, out r, out g, out b, out _))
+                if (haveTable && packed != null && i < packed.Length)
                 {
-                    skipped++;
-                    rows.Add(CsvUtil.TableRow((int)i, 0, 0, 0));
+                    complete[i] = packed[i];
                     continue;
                 }
 
-                rows.Add(CsvUtil.TableRow((int)i, r, g, b));
+                byte r, g, b;
+                if (ColorResolver.TryResolve(dgnFile, (uint)i, out _, out r, out g, out b, out _))
+                    complete[i] = ColorRef.Pack(r, g, b);
+                else
+                    skipped++;
             }
 
+            // Always emit indices 0–255 so unused table colors are included.
+            rows.AddRange(ColorTableCsvBuilder.BuildAllColorCodes(complete));
             return skipped;
         }
 
@@ -135,8 +149,6 @@ namespace ExportRgbColors
                     continue;
                 }
 
-                // Index dialog Color −1 is ByLevel: keep ColorIndex −1, RGB of this
-                // level, and the layer name. Shared colors still get one row per level.
                 rows.Add(CsvUtil.ByLevelRow(layerName, r, g, b));
             }
 

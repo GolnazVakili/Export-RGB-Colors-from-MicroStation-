@@ -6,6 +6,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\src\ExportRgbColors\CsvUtil.cs" Link="CsvUtil.cs" />
+    <Compile Include="..\..\src\ExportRgbColors\ColorRef.cs" Link="ColorRef.cs" />
+    <Compile Include="..\..\src\ExportRgbColors\ColorTableCsvBuilder.cs" Link="ColorTableCsvBuilder.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />

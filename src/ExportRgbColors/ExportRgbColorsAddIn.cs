@@ -4,8 +4,8 @@ using Bentley.MstnPlatformNET;
 namespace ExportRgbColors
 {
     /// <summary>
-    /// MicroStation CONNECT / 2023+ add-in that exports the color table and
-    /// level ByLevel colors to CSV.
+    /// MicroStation CONNECT / 2023+ add-in that exports every color-table
+    /// code (0–255) with RGB, plus optional ByLevel rows.
     /// MdlTaskID must stay at or under 15 characters.
     /// </summary>
     [AddIn(MdlTaskID = "RgbCsvExport")]

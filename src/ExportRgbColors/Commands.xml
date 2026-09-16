@@ -8,11 +8,13 @@
   <SubKeyinTables>
     <KeyinTable ID="Commands">
       <Keyword CommandWord="EXPORT" />
+      <Keyword CommandWord="TABLE" />
       <Keyword CommandWord="DIALOG" />
     </KeyinTable>
   </SubKeyinTables>
   <KeyinHandlers>
     <KeyinHandler Keyin="RGBCSV EXPORT" Function="ExportRgbColors.KeyinCommands.Export" />
+    <KeyinHandler Keyin="RGBCSV TABLE" Function="ExportRgbColors.KeyinCommands.ExportTable" />
     <KeyinHandler Keyin="RGBCSV DIALOG" Function="ExportRgbColors.KeyinCommands.Dialog" />
   </KeyinHandlers>
 </KeyinTree>

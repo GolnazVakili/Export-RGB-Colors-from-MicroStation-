@@ -8,12 +8,23 @@ namespace ExportRgbColors
 {
     /// <summary>
     /// Key-in handlers registered from Commands.xml.
-    ///   RGBCSV EXPORT [path]
+    ///   RGBCSV EXPORT [path]  — all color-table codes with RGB
+    ///   RGBCSV TABLE [path]   — same (all codes, no layer filter)
     ///   RGBCSV DIALOG
     /// </summary>
     public static class KeyinCommands
     {
         public static void Export(string unparsed)
+        {
+            ExportToPath(unparsed, includeColorTable: true, includeLevels: false);
+        }
+
+        public static void ExportTable(string unparsed)
+        {
+            ExportToPath(unparsed, includeColorTable: true, includeLevels: false);
+        }
+
+        private static void ExportToPath(string unparsed, bool includeColorTable, bool includeLevels)
         {
             try
             {
@@ -31,7 +42,7 @@ namespace ExportRgbColors
                 if (string.IsNullOrEmpty(path))
                     return;
 
-                RunExport(path, includeColorTable: true, includeLevels: true);
+                RunExport(path, includeColorTable, includeLevels);
             }
             catch (Exception ex)
             {
@@ -74,7 +85,7 @@ namespace ExportRgbColors
 
             ExportResult result = ColorCsvExporter.Export(path, includeColorTable, includeLevels);
             string summary = string.Format(
-                "Wrote {0} rows ({1} color table, {2} level) to {3}",
+                "Wrote {0} rows ({1} color-table codes with RGB, including unused; {2} level) to {3}",
                 result.TotalRows,
                 result.ColorTableRows,
                 result.LevelRows,
