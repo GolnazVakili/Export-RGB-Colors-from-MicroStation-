@@ -1,24 +1,35 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <RibbonItems xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="RibbonDefinitions.xsd">
-  <!-- Drawing workflow already has an Automation tab. Adding this TabRef plus
-       a Tab named Mstn.Drawing.Automation merges our group onto that tab. -->
+  <!-- This Drawing ribbon has no Automation tab. Add one, with Export RGB Colors on it. -->
   <TabCollections>
     <TabCollection Name="Mstn.Drawing">
-      <TabRef Name="Mstn.Drawing.Automation" Priority="90000">
+      <TabRef Name="ExportRgbColors.Automation" Priority="130000">
+      </TabRef>
+    </TabCollection>
+    <TabCollection Name="ModelingTabs">
+      <TabRef Name="ExportRgbColors.Automation" Priority="130000">
+      </TabRef>
+    </TabCollection>
+    <TabCollection Name="VisualizationTabs">
+      <TabRef Name="ExportRgbColors.Automation" Priority="130000">
+      </TabRef>
+    </TabCollection>
+    <TabCollection Name="Mstn.TaskNavigation.Tabs">
+      <TabRef Name="ExportRgbColors.Automation" Priority="130000">
       </TabRef>
     </TabCollection>
   </TabCollections>
   <Tabs>
-    <Tab Name="Mstn.Drawing.Automation" Priority="900">
+    <Tab Name="ExportRgbColors.Automation" Priority="130">
       <Label>Automation</Label>
       <TabItems>
-        <GroupRef Name="ExportRgbColors.Group" Priority="20000">
+        <GroupRef Name="ExportRgbColors.Group" Priority="-10000">
         </GroupRef>
       </TabItems>
     </Tab>
   </Tabs>
   <Groups>
-    <Group GroupZone="Primary" Name="ExportRgbColors.Group" PanelType="Collapsible" Priority="200">
+    <Group GroupZone="Primary" Name="ExportRgbColors.Group" PanelType="Collapsible" Priority="100">
       <Label>RGB Colors</Label>
       <Icon Type="NamedIcon">
         <NamedIcon>ColorTable</NamedIcon>

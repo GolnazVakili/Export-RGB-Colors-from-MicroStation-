@@ -1,6 +1,6 @@
 # Export ColorIndex and RGB from MicroStation
 
-MicroStation CONNECT / 2023+ **add-in** that exports **ColorIndex and RGB on every row**. After install, it **loads automatically** and stays on the **Drawing → Automation** tab when you close and reopen MicroStation.
+MicroStation CONNECT / 2023+ **add-in** that exports **ColorIndex and RGB on every row**. After install it adds an **Automation** tab to the Drawing ribbon and puts **Export RGB Colors** on that tab.
 
 ## Install (once)
 
@@ -19,38 +19,34 @@ msbuild src\ExportRgbColors\ExportRgbColors.csproj /p:Configuration=Release
 | `ribbon\ExportRgbColorsNamedCommands.xml` | `MicroStation\mdlapps\` |
 | `config\ExportRgbColors.cfg` | `MicroStation\config\appl\` |
 
-Example folders:
+Example:
 
 - `C:\Program Files\Bentley\MicroStation 2024\MicroStation\mdlapps\`
 - `C:\Program Files\Bentley\MicroStation 2024\MicroStation\config\appl\`
 
 3. **Quit MicroStation completely**, start it again, and open a DGN.
 
-## After restart
+## Where the button is
 
-1. Set the workflow to **Drawing**.
-2. Open the **Automation** tab.
-3. Click **Export RGB Colors**.
+Your Drawing tabs are currently:
 
-The add-in is loaded with the DGN (`MS_DGNAPPS`). The ribbon file is loaded at startup (`MS_RIBBONXML`), so the button is still there after you close and reopen MicroStation.
+File, Home, View, Annotate, Attach, Analyze, Curves, Constraints, Utilities, Drawing Aids, Content, Collaborate, Help
 
-If the button is missing, right-click the ribbon → **Customize Ribbon** → Drawing → **Automation** → add **Export RGB Colors** from **Commands (Custom)**. The key-in is:
+After install and restart, **Automation** appears in that row (next to Collaborate / Help). Click it, then **Export RGB Colors**.
+
+Until the ribbon files are copied, you can still run it with **F9**:
 
 ```text
-[RgbCsvExport]RGBCSV DIALOG
+mdl load ExportRgbColors
+RGBCSV DIALOG
 ```
 
 ## CSV
-
-```text
-ColorIndex,RGB,R,G,B,Layer
-```
 
 ```csv
 ColorIndex,RGB,R,G,B,Layer
 0,"0, 0, 0",0,0,0,
 1,"0, 0, 255",0,0,255,
-2,"0, 255, 0",0,255,0,
 ```
 
 Every color-table index `0`–`255` is written, including colors not assigned to a layer.
@@ -68,7 +64,7 @@ Every color-table index `0`–`255` is written, including colors not assigned to
 
 ```text
 src/ExportRgbColors/           C# add-in
-ribbon/                        Automation-tab ribbon + named command
+ribbon/                        Automation tab + named command
 config/ExportRgbColors.cfg     auto-load + ribbon path
 install/Install-ExportRgbColors.ps1
 tests/ExportRgbColors.Tests/
