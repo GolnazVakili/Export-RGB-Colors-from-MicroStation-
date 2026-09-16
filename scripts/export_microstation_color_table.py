@@ -1,8 +1,9 @@
-"""Export every MicroStation color-table code (0-255) with RGB to CSV.
+"""Export every MicroStation color-table code (0-255) with RGB, Layer, and Description.
 
 Requires a running MicroStation session with a DGN open. Uses COM
-ExtractColorTable.GetColors so unused table slots are included, not only
-colors assigned to a layer.
+ExtractColorTable.GetColors so unused table slots are included. Levels that
+use a table color fill Layer and Description on that row (one row per level
+if several share a color).
 
     python export_microstation_color_table.py [output.csv]
 """
@@ -10,6 +11,7 @@ from __future__ import annotations
 
 import csv
 import sys
+from collections import defaultdict
 from pathlib import Path
 
 
@@ -51,15 +53,61 @@ def packed_by_index(values) -> list[int]:
     return result
 
 
-def write_csv(path: Path, packed: list[int], level_rows: list[tuple[str, int, int, int]]) -> None:
+def collect_level_rows(design) -> list[tuple[int, str, str]]:
+    rows: list[tuple[int, str, str]] = []
+    try:
+        levels = design.Levels
+    except Exception:
+        return rows
+
+    for lvl in levels:
+        try:
+            name = str(lvl.Name or "")
+        except Exception:
+            continue
+        if not name:
+            continue
+        try:
+            description = str(getattr(lvl, "Description", None) or "")
+        except Exception:
+            description = ""
+        try:
+            color_index = int(lvl.ElementColor)
+        except Exception:
+            continue
+        rows.append((color_index, name, description))
+    return rows
+
+
+def write_csv(
+    path: Path,
+    packed: list[int],
+    level_rows: list[tuple[int, str, str]],
+) -> None:
+    by_index: dict[int, list[tuple[str, str]]] = defaultdict(list)
+    extras: list[tuple[int, str, str]] = []
+    for color_index, layer, description in level_rows:
+        index = int(color_index)
+        if 0 <= index < COLOR_TABLE_SIZE:
+            by_index[index].append((layer, description))
+        else:
+            extras.append((index, layer, description))
+
     with path.open("w", encoding="utf-8-sig", newline="") as handle:
         writer = csv.writer(handle)
-        writer.writerow(["ColorIndex", "RGB", "R", "G", "B", "Layer"])
+        writer.writerow(["ColorIndex", "RGB", "R", "G", "B", "Layer", "Description"])
         for index in range(COLOR_TABLE_SIZE):
             r, g, b = unpack_colorref(packed[index] if index < len(packed) else 0)
-            writer.writerow([index, f"{r}, {g}, {b}", r, g, b, ""])
-        for name, r, g, b in level_rows:
-            writer.writerow([-1, f"{r}, {g}, {b}", r, g, b, name])
+            assigned = by_index.get(index) or []
+            if not assigned:
+                writer.writerow([index, f"{r}, {g}, {b}", r, g, b, "", ""])
+                continue
+            for layer, description in assigned:
+                writer.writerow([index, f"{r}, {g}, {b}", r, g, b, layer, description])
+        for color_index, layer, description in extras:
+            packed_value = int(color_index)
+            r, g, b = unpack_colorref(packed_value)
+            writer.writerow([-1, f"{r}, {g}, {b}", r, g, b, layer, description])
 
 
 def main(argv: list[str]) -> int:
@@ -75,10 +123,11 @@ def main(argv: list[str]) -> int:
     design = app.ActiveDesignFile
     table = design.ExtractColorTable()
     packed = packed_by_index(table.GetColors())
+    level_rows = collect_level_rows(design)
 
     out = Path(argv[1]) if len(argv) > 1 else Path(design.FullName + "-all-color-codes.csv")
-    write_csv(out, packed, level_rows=[])
-    print(f"Wrote all {COLOR_TABLE_SIZE} color-table codes with RGB to {out}")
+    write_csv(out, packed, level_rows)
+    print(f"Wrote all {COLOR_TABLE_SIZE} color-table codes with RGB, Layer, and Description to {out}")
     return 0
 
 

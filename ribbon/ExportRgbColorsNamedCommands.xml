@@ -3,7 +3,7 @@
   <UserNamedCommand>
     <Name>ExportRgbColors.Export</Name>
     <Label>Export RGB Colors</Label>
-    <Description>Export every color-table ColorIndex with RGB to CSV</Description>
+    <Description>Export ColorIndex, RGB, Layer, and Description to CSV</Description>
     <Keyin>[RgbCsvExport]RGBCSV DIALOG</Keyin>
     <IconName>ColorTable</IconName>
   </UserNamedCommand>

@@ -2,16 +2,17 @@ Attribute VB_Name = "ExportAllColorCodes"
 Option Explicit
 
 ' Export every color code in the attached MicroStation color table (0-255)
-' with RGB. Unused table slots are still written; this is not limited to
-' colors assigned to a layer.
+' with RGB, Layer, and Description. Unused table slots are still written;
+' Layer and Description are filled when a level uses that color. Shared
+' colors get one row per level.
 '
 ' In MicroStation:
 '   1. Utilities > Macros > VBA Manager (or Drawing > Macros)
 '   2. Import this .bas into a VBA project
 '   3. Key-in:  vba run ExportAllColorCodes
 '
-' Optional: also append ByLevel rows (ColorIndex -1 + layer name):
-'   vba run ExportAllColorCodesAndLevels
+' Optional: table only (blank Layer/Description):
+'   vba run ExportAllColorCodesTableOnly
 
 Private Sub ExtractRGB(ByVal longColor As Long, ByRef intRed As Byte, ByRef intGreen As Byte, ByRef intBlue As Byte)
     Dim lngColor As Long
@@ -55,38 +56,73 @@ Private Function DefaultCsvPath() As String
     DefaultCsvPath = ActiveDesignFile.FullName & "-all-color-codes.csv"
 End Function
 
-Private Sub WriteColorTableRows(ByVal fileNum As Integer, ByRef col As Variant)
+Private Function LevelColorIndex(ByVal lvl As Level) As Long
+    On Error GoTo Fail
+    LevelColorIndex = lvl.ElementColor
+    Exit Function
+Fail:
+    LevelColorIndex = -99999
+End Function
+
+Private Function LevelDescriptionOf(ByVal lvl As Level) As String
+    On Error GoTo Fail
+    LevelDescriptionOf = lvl.Description & ""
+    Exit Function
+Fail:
+    LevelDescriptionOf = ""
+End Function
+
+Private Sub WriteRgbLine(ByVal fileNum As Integer, ByVal colorIndex As Long, ByVal r As Byte, ByVal g As Byte, ByVal b As Byte, ByVal layer As String, ByVal description As String)
+    Print #fileNum, CStr(colorIndex) & "," & CsvEscape(CStr(r) & ", " & CStr(g) & ", " & CStr(b)) & "," & CStr(r) & "," & CStr(g) & "," & CStr(b) & "," & CsvEscape(layer) & "," & CsvEscape(description)
+End Sub
+
+Private Sub WriteColorTableRows(ByVal fileNum As Integer, ByRef col As Variant, ByVal includeLevels As Boolean)
     Dim i As Long
     Dim r As Byte, g As Byte, b As Byte
+    Dim lvl As Level
+    Dim matched As Boolean
+    Dim colorIndex As Long
 
     For i = 0 To 255
         ExtractRGB PackedColorAt(col, i), r, g, b
-        Print #fileNum, CStr(i) & "," & CsvEscape(CStr(r) & ", " & CStr(g) & ", " & CStr(b)) & "," & CStr(r) & "," & CStr(g) & "," & CStr(b) & ","
+        matched = False
+
+        If includeLevels Then
+            For Each lvl In ActiveDesignFile.Levels
+                If lvl Is Nothing Then GoTo NextLevelOnTable
+                If Len(lvl.Name) = 0 Then GoTo NextLevelOnTable
+                colorIndex = LevelColorIndex(lvl)
+                If colorIndex = i Then
+                    WriteRgbLine fileNum, i, r, g, b, lvl.Name, LevelDescriptionOf(lvl)
+                    matched = True
+                End If
+NextLevelOnTable:
+            Next
+        End If
+
+        If Not matched Then
+            WriteRgbLine fileNum, i, r, g, b, "", ""
+        End If
     Next
 End Sub
 
-Private Sub WriteLevelRows(ByVal fileNum As Integer, ByRef col As Variant)
+Private Sub WriteExtraLevelRows(ByVal fileNum As Integer, ByRef col As Variant)
     Dim lvl As Level
     Dim colorIndex As Long
     Dim r As Byte, g As Byte, b As Byte
 
     For Each lvl In ActiveDesignFile.Levels
-        If lvl Is Nothing Then GoTo NextLevel
-        If Len(lvl.Name) = 0 Then GoTo NextLevel
+        If lvl Is Nothing Then GoTo NextExtra
+        If Len(lvl.Name) = 0 Then GoTo NextExtra
 
-        On Error GoTo NextLevel
-        colorIndex = lvl.ElementColor
-        On Error GoTo 0
+        colorIndex = LevelColorIndex(lvl)
+        If colorIndex >= 0 And colorIndex <= 255 Then GoTo NextExtra
 
-        If colorIndex >= 0 And colorIndex <= 255 Then
-            ExtractRGB PackedColorAt(col, colorIndex), r, g, b
-        Else
-            ExtractRGB colorIndex, r, g, b
-        End If
+        If colorIndex = -99999 Then GoTo NextExtra
 
-        Print #fileNum, "-1," & CsvEscape(CStr(r) & ", " & CStr(g) & ", " & CStr(b)) & "," & CStr(r) & "," & CStr(g) & "," & CStr(b) & "," & CsvEscape(lvl.Name)
-NextLevel:
-        On Error GoTo 0
+        ExtractRGB colorIndex, r, g, b
+        WriteRgbLine fileNum, -1, r, g, b, lvl.Name, LevelDescriptionOf(lvl)
+NextExtra:
     Next
 End Sub
 
@@ -107,20 +143,24 @@ Private Sub ExportColorCodes(ByVal includeLevels As Boolean)
 
     fileNum = FreeFile
     Open csvPath For Output As #fileNum
-    Print #fileNum, "ColorIndex,RGB,R,G,B,Layer"
-    WriteColorTableRows fileNum, col
+    Print #fileNum, "ColorIndex,RGB,R,G,B,Layer,Description"
+    WriteColorTableRows fileNum, col, includeLevels
     If includeLevels Then
-        WriteLevelRows fileNum, col
+        WriteExtraLevelRows fileNum, col
     End If
     Close #fileNum
 
-    MsgBox "Wrote all 256 color-table codes with RGB to:" & vbCrLf & csvPath, vbInformation, "Export color codes"
+    MsgBox "Wrote all 256 color-table codes with RGB, Layer, and Description to:" & vbCrLf & csvPath, vbInformation, "Export color codes"
 End Sub
 
 Public Sub ExportAllColorCodes()
-    ExportColorCodes includeLevels:=False
+    ExportColorCodes includeLevels:=True
 End Sub
 
 Public Sub ExportAllColorCodesAndLevels()
     ExportColorCodes includeLevels:=True
+End Sub
+
+Public Sub ExportAllColorCodesTableOnly()
+    ExportColorCodes includeLevels:=False
 End Sub

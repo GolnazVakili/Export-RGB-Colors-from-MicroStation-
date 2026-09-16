@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using Bentley.DgnPlatformNET;
 using Bentley.MstnPlatformNET;
@@ -12,11 +13,7 @@ namespace ExportRgbColors
         public int ColorTableRows { get; set; }
         public int LevelRows { get; set; }
         public int Skipped { get; set; }
-
-        public int TotalRows
-        {
-            get { return ColorTableRows + LevelRows; }
-        }
+        public int TotalRows { get; set; }
     }
 
     internal sealed class ColorExportData
@@ -38,25 +35,32 @@ namespace ExportRgbColors
             if (dgnFile == null || dgnModel == null)
                 throw new InvalidOperationException("No active DGN file. Open a design file and try again.");
 
-            var rows = new List<ColorCsvRow>();
+            var levelRows = new List<ColorCsvRow>();
             int skipped = 0;
+
+            if (includeLevels)
+                skipped += CollectLevelRows(dgnFile, dgnModel, levelRows);
+
+            var rows = new List<ColorCsvRow>();
             int tableRows = 0;
 
             if (includeColorTable)
             {
-                int before = rows.Count;
-                skipped += AppendColorTable(dgnFile, rows);
-                tableRows = rows.Count - before;
+                int[] complete;
+                skipped += ReadColorTable(dgnFile, out complete);
+                rows.AddRange(ColorTableCsvBuilder.BuildAllColorCodes(complete, levelRows));
+                tableRows = CountTableRows(rows);
             }
-
-            if (includeLevels)
-                skipped += AppendLevelColors(dgnFile, dgnModel, rows);
+            else
+            {
+                rows.AddRange(levelRows);
+            }
 
             return new ColorExportData
             {
                 Rows = rows,
                 ColorTableRows = tableRows,
-                LevelRows = rows.Count - tableRows,
+                LevelRows = CountAssignedLayers(rows),
                 Skipped = skipped
             };
         }
@@ -76,7 +80,8 @@ namespace ExportRgbColors
                 Path = csvPath,
                 ColorTableRows = data.ColorTableRows,
                 LevelRows = data.LevelRows,
-                Skipped = data.Skipped
+                Skipped = data.Skipped,
+                TotalRows = data.Rows.Count
             };
         }
 
@@ -115,12 +120,12 @@ namespace ExportRgbColors
             }
         }
 
-        private static int AppendColorTable(DgnFile dgnFile, List<ColorCsvRow> rows)
+        private static int ReadColorTable(DgnFile dgnFile, out int[] complete)
         {
             int[] packed;
             bool haveTable = AttachedColorTable.TryReadPackedColors(out packed);
 
-            var complete = new int[ColorTableSize];
+            complete = new int[ColorTableSize];
             int skipped = 0;
 
             for (int i = 0; i < ColorTableSize; i++)
@@ -138,12 +143,10 @@ namespace ExportRgbColors
                     skipped++;
             }
 
-            // Always emit indices 0–255 so unused table colors are included.
-            rows.AddRange(ColorTableCsvBuilder.BuildAllColorCodes(complete));
             return skipped;
         }
 
-        private static int AppendLevelColors(DgnFile dgnFile, DgnModel dgnModel, List<ColorCsvRow> rows)
+        private static int CollectLevelRows(DgnFile dgnFile, DgnModel dgnModel, List<ColorCsvRow> rows)
         {
             FileLevelCache cache = dgnModel.GetFileLevelCache();
             if (cache == null)
@@ -160,6 +163,8 @@ namespace ExportRgbColors
                 if (string.IsNullOrEmpty(layerName))
                     continue;
 
+                string description = GetLevelDescription(handle, layerName);
+
                 LevelDefinitionColor levelColor = handle.GetByLevelColor();
                 uint colorId = ColorResolver.GetLevelColorId(levelColor);
 
@@ -170,10 +175,94 @@ namespace ExportRgbColors
                     continue;
                 }
 
-                rows.Add(CsvUtil.ByLevelRow(layerName, r, g, b));
+                if (colorId <= 255)
+                    rows.Add(CsvUtil.TableRow((int)colorId, r, g, b, layerName, description));
+                else
+                    rows.Add(CsvUtil.ByLevelRow(layerName, r, g, b, description));
             }
 
             return skipped;
+        }
+
+        private static string GetLevelDescription(LevelHandle handle, string layerName)
+        {
+            string description = ReadStringProperty(handle, "Description");
+            if (!string.IsNullOrEmpty(description))
+                return description;
+            return TryComLevelDescription(layerName);
+        }
+
+        private static string ReadStringProperty(object target, string name)
+        {
+            if (target == null)
+                return string.Empty;
+
+            try
+            {
+                var prop = target.GetType().GetProperty(name);
+                if (prop == null)
+                    return string.Empty;
+                object value = prop.GetValue(target, null);
+                return value == null
+                    ? string.Empty
+                    : Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private static string TryComLevelDescription(string layerName)
+        {
+            if (string.IsNullOrEmpty(layerName))
+                return string.Empty;
+
+            try
+            {
+                var app = Bentley.MstnPlatformNET.InteropServices.Utilities.ComApp;
+                if (app == null || app.ActiveDesignFile == null)
+                    return string.Empty;
+
+                var lvl = app.ActiveDesignFile.Levels[layerName];
+                if (lvl == null)
+                    return string.Empty;
+
+                string desc = lvl.Description;
+                return desc ?? string.Empty;
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private static int CountTableRows(IEnumerable<ColorCsvRow> rows)
+        {
+            int count = 0;
+            foreach (ColorCsvRow row in rows)
+            {
+                int index;
+                if (row != null
+                    && int.TryParse(row.ColorIndex, NumberStyles.Integer, CultureInfo.InvariantCulture, out index)
+                    && index >= 0
+                    && index < ColorTableSize)
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        private static int CountAssignedLayers(IEnumerable<ColorCsvRow> rows)
+        {
+            int count = 0;
+            foreach (ColorCsvRow row in rows)
+            {
+                if (row != null && !string.IsNullOrEmpty(row.Layer))
+                    count++;
+            }
+            return count;
         }
     }
 }

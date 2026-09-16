@@ -47,7 +47,7 @@
   <Buttons>
     <Button Name="ExportRgbColors.Export" Priority="100">
       <Label>Export RGB Colors</Label>
-      <Description>Export every color-table ColorIndex with RGB to CSV</Description>
+      <Description>Export ColorIndex, RGB, Layer, and Description to CSV</Description>
       <ButtonParams CollapseToSmall="WhenGroupIsSmall" Size="Large">
       </ButtonParams>
       <ButtonData>
