@@ -1,6 +1,5 @@
-# Install ExportRgbColors into a local MicroStation CONNECT / 2023+ folder.
-# Run from the repo (or from the folder that contains src\ and ribbon\):
-#   powershell -ExecutionPolicy Bypass -File install\Install-ExportRgbColors.ps1
+# Copies Export RGB Colors into the MicroStation folder on THIS Windows PC.
+# Double-click Copy-To-MicroStation.bat (Run as administrator if Program Files is locked).
 
 param(
     [string]$MicroStationDir
@@ -11,49 +10,71 @@ $root = Split-Path -Parent $PSScriptRoot
 
 function Find-MicroStation {
     if ($MicroStationDir -and (Test-Path (Join-Path $MicroStationDir "ustation.dll"))) {
-        return $MicroStationDir
+        return (Resolve-Path $MicroStationDir).Path
     }
-    foreach ($candidate in @(
-            $env:MS,
-            $env:MSMDIR,
-            $env:MICROSTATION_LOCATION,
-            "C:\Program Files\Bentley\MicroStation 2025\MicroStation",
-            "C:\Program Files\Bentley\MicroStation 2024\MicroStation",
-            "C:\Program Files\Bentley\MicroStation 2023\MicroStation",
-            "C:\Program Files\Bentley\MicroStation CONNECT Edition\MicroStation"
-        )) {
+    $hints = @(
+        $env:MS,
+        $env:MSMDIR,
+        $env:MICROSTATION_LOCATION,
+        "C:\Program Files\Bentley\MicroStation 2025\MicroStation",
+        "C:\Program Files\Bentley\MicroStation 2024\MicroStation",
+        "C:\Program Files\Bentley\MicroStation 2023\MicroStation",
+        "C:\Program Files\Bentley\MicroStation CONNECT Edition\MicroStation"
+    )
+    foreach ($candidate in $hints) {
         if ($candidate -and (Test-Path (Join-Path $candidate "ustation.dll"))) {
             return $candidate
+        }
+    }
+    $bentley = "C:\Program Files\Bentley"
+    if (Test-Path $bentley) {
+        $found = Get-ChildItem -Path $bentley -Filter ustation.dll -Recurse -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+        if ($found) {
+            return $found.DirectoryName
         }
     }
     throw "MicroStation was not found. Pass -MicroStationDir `"C:\Program Files\Bentley\<version>\MicroStation`"."
 }
 
+function Copy-File([string]$from, [string]$to) {
+    $dir = Split-Path $to
+    New-Item -ItemType Directory -Force -Path $dir | Out-Null
+    Copy-Item -Force $from $to
+    Write-Host "Copied $to"
+}
+
 $ms = Find-MicroStation
 $mdlapps = Join-Path $ms "mdlapps"
 $appl = Join-Path $ms "config\appl"
-New-Item -ItemType Directory -Force -Path $mdlapps, $appl | Out-Null
 
-$dllCandidates = @(
+$dll = @(
     (Join-Path $root "src\ExportRgbColors\bin\Release\ExportRgbColors.dll"),
     (Join-Path $root "src\ExportRgbColors\bin\Debug\ExportRgbColors.dll")
-)
-$dll = $dllCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
-if (-not $dll) {
-    throw "ExportRgbColors.dll not found. Build the add-in first (msbuild ... /p:Configuration=Release)."
+) | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+try {
+    if ($dll) {
+        Copy-File $dll (Join-Path $mdlapps "ExportRgbColors.dll")
+    }
+    Copy-File (Join-Path $root "ribbon\ExportRgbColorsRibbon.xml") (Join-Path $mdlapps "ExportRgbColorsRibbon.xml")
+    Copy-File (Join-Path $root "ribbon\ExportRgbColorsNamedCommands.xml") (Join-Path $mdlapps "ExportRgbColorsNamedCommands.xml")
+    Copy-File (Join-Path $root "config\ExportRgbColors.cfg") (Join-Path $appl "ExportRgbColors.cfg")
+}
+catch [System.UnauthorizedAccessException] {
+    Write-Host "Program Files is locked. Re-run Copy-To-MicroStation.bat as Administrator."
+    throw
 }
 
-Copy-Item -Force $dll (Join-Path $mdlapps "ExportRgbColors.dll")
-Copy-Item -Force (Join-Path $root "ribbon\ExportRgbColorsRibbon.xml") (Join-Path $mdlapps "ExportRgbColorsRibbon.xml")
-Copy-Item -Force (Join-Path $root "ribbon\ExportRgbColorsNamedCommands.xml") (Join-Path $mdlapps "ExportRgbColorsNamedCommands.xml")
-Copy-Item -Force (Join-Path $root "config\ExportRgbColors.cfg") (Join-Path $appl "ExportRgbColors.cfg")
+if (-not $dll) {
+    Write-Host ""
+    Write-Host "Ribbon files are in place. ExportRgbColors.dll was not in bin\Release yet."
+    Write-Host "On this PC run:"
+    Write-Host "  msbuild src\ExportRgbColors\ExportRgbColors.csproj /p:Configuration=Release"
+    Write-Host "then run this installer again so the DLL is copied."
+}
 
-Write-Host "Installed to $ms"
-Write-Host "Copied:"
-Write-Host "  $mdlapps\ExportRgbColors.dll"
-Write-Host "  $mdlapps\ExportRgbColorsRibbon.xml"
-Write-Host "  $mdlapps\ExportRgbColorsNamedCommands.xml"
-Write-Host "  $appl\ExportRgbColors.cfg"
 Write-Host ""
-Write-Host "Close MicroStation completely, start it again, open a DGN."
-Write-Host "On the Drawing ribbon click the new Automation tab, then Export RGB Colors."
+Write-Host "Installed into $ms"
+Write-Host "Quit MicroStation completely, start it, open a DGN."
+Write-Host "Drawing ribbon: click the new Automation tab, then Export RGB Colors."

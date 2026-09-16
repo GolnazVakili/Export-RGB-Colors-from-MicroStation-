@@ -10,7 +10,9 @@ MicroStation CONNECT / 2023+ **add-in** that exports **ColorIndex and RGB on eve
 msbuild src\ExportRgbColors\ExportRgbColors.csproj /p:Configuration=Release
 ```
 
-2. Copy these files (or run `install\Install-ExportRgbColors.ps1`):
+2. On **your Windows PC** (the one that runs MicroStation), double-click `install\Copy-To-MicroStation.bat`. Use **Run as administrator** if it cannot write to Program Files.
+
+That script copies the DLL, ribbon XML, and cfg into `mdlapps` and `config\appl`. This cloud agent cannot write into `C:\Program Files\Bentley\...` on your machine.
 
 | File | Destination |
 | --- | --- |
