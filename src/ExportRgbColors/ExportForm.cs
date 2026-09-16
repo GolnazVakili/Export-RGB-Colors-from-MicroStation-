@@ -6,8 +6,8 @@ using System.Windows.Forms;
 namespace ExportRgbColors
 {
     /// <summary>
-    /// Add-in export dialog. Preview shows ColorIndex and RGB together, matching
-    /// the MicroStation Color / Index dialog.
+    /// Add-in export dialog. Preview shows ColorIndex, RGB, Layer, and
+    /// Description together, matching the Color / Index dialog plus Level Manager.
     /// </summary>
     internal sealed class ExportForm : Form
     {
@@ -34,12 +34,12 @@ namespace ExportRgbColors
 
         public ExportForm(string suggestedPath)
         {
-            Text = "Export Color Index and RGB";
+            Text = "Export Color Index, RGB, Layer, and Description";
             FormBorderStyle = FormBorderStyle.Sizable;
             MinimizeBox = false;
             StartPosition = FormStartPosition.CenterScreen;
-            MinimumSize = new Size(720, 480);
-            Size = new Size(780, 560);
+            MinimumSize = new Size(820, 500);
+            Size = new Size(900, 580);
             Font = new Font("Segoe UI", 9F);
 
             var pathLabel = new Label
@@ -52,7 +52,7 @@ namespace ExportRgbColors
             _pathBox = new TextBox
             {
                 Location = new Point(80, 14),
-                Size = new Size(560, 23),
+                Size = new Size(680, 23),
                 Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
                 Text = suggestedPath ?? string.Empty
             };
@@ -60,7 +60,7 @@ namespace ExportRgbColors
             var browse = new Button
             {
                 Text = "Browse…",
-                Location = new Point(652, 13),
+                Location = new Point(772, 13),
                 Size = new Size(96, 25),
                 Anchor = AnchorStyles.Top | AnchorStyles.Right
             };
@@ -78,8 +78,8 @@ namespace ExportRgbColors
             _levelsBox = new CheckBox
             {
                 AutoSize = true,
-                Checked = false,
-                Text = "Also append ByLevel rows (ColorIndex −1 + layer name + RGB)",
+                Checked = true,
+                Text = "Fill Layer and Description from levels that use each color",
                 Location = new Point(80, 72)
             };
             _levelsBox.CheckedChanged += (s, e) => RefreshPreview();
@@ -87,16 +87,16 @@ namespace ExportRgbColors
             var hint = new Label
             {
                 AutoSize = true,
-                MaximumSize = new Size(660, 0),
+                MaximumSize = new Size(780, 0),
                 ForeColor = Color.DimGray,
-                Text = "Each row has ColorIndex and RGB at the same time, as in the Color dialog.",
+                Text = "Unused colors stay in the file with blank Layer and Description. Shared colors get one row per level.",
                 Location = new Point(80, 96)
             };
 
             _grid = new DataGridView
             {
                 Location = new Point(12, 124),
-                Size = new Size(736, 340),
+                Size = new Size(856, 360),
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
                 AllowUserToAddRows = false,
                 AllowUserToDeleteRows = false,
@@ -112,7 +112,7 @@ namespace ExportRgbColors
             _status = new Label
             {
                 AutoSize = true,
-                Location = new Point(12, 476),
+                Location = new Point(12, 496),
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Left,
                 Text = "Loading color table…"
             };
@@ -121,7 +121,7 @@ namespace ExportRgbColors
             {
                 Text = "Export",
                 DialogResult = DialogResult.OK,
-                Location = new Point(572, 472),
+                Location = new Point(692, 492),
                 Size = new Size(86, 27),
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Right
             };
@@ -131,7 +131,7 @@ namespace ExportRgbColors
             {
                 Text = "Cancel",
                 DialogResult = DialogResult.Cancel,
-                Location = new Point(664, 472),
+                Location = new Point(784, 492),
                 Size = new Size(84, 27),
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Right
             };
@@ -153,43 +153,49 @@ namespace ExportRgbColors
             {
                 Name = "ColorIndex",
                 HeaderText = "ColorIndex",
-                FillWeight = 18
+                FillWeight = 14
             });
             _grid.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "Swatch",
                 HeaderText = "",
-                FillWeight = 8
+                FillWeight = 6
             });
             _grid.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "RGB",
                 HeaderText = "RGB",
-                FillWeight = 28
+                FillWeight = 20
             });
             _grid.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "R",
                 HeaderText = "R",
-                FillWeight = 10
+                FillWeight = 8
             });
             _grid.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "G",
                 HeaderText = "G",
-                FillWeight = 10
+                FillWeight = 8
             });
             _grid.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "B",
                 HeaderText = "B",
-                FillWeight = 10
+                FillWeight = 8
             });
             _grid.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "Layer",
                 HeaderText = "Layer",
                 FillWeight = 16
+            });
+            _grid.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "Description",
+                HeaderText = "Description",
+                FillWeight = 20
             });
         }
 
@@ -208,12 +214,13 @@ namespace ExportRgbColors
                         row.R,
                         row.G,
                         row.B,
-                        row.Layer ?? string.Empty);
+                        row.Layer ?? string.Empty,
+                        row.Description ?? string.Empty);
                     _grid.Rows[index].Tag = row;
                 }
 
                 _status.Text = string.Format(
-                    "{0} rows — ColorIndex and RGB on every row ({1} color codes, {2} level)",
+                    "{0} rows — ColorIndex, RGB, Layer, Description ({1} color-table rows, {2} with a layer)",
                     data.Rows.Count,
                     data.ColorTableRows,
                     data.LevelRows);
@@ -244,7 +251,7 @@ namespace ExportRgbColors
         {
             using (var dialog = new SaveFileDialog())
             {
-                dialog.Title = "Export ColorIndex and RGB";
+                dialog.Title = "Export ColorIndex, RGB, Layer, and Description";
                 dialog.Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*";
                 dialog.FileName = Path.GetFileName(CsvPath);
                 string folder = Path.GetDirectoryName(CsvPath);

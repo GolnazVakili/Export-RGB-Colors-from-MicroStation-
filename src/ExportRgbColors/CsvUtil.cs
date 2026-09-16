@@ -7,7 +7,8 @@ namespace ExportRgbColors
 {
     /// <summary>
     /// One exported color row. ColorIndex and RGB are always written together
-    /// (the Index dialog Color field plus the RGB field).
+    /// (the Index dialog Color field plus the RGB field). Layer and Description
+    /// come from each MicroStation level that uses that color.
     /// </summary>
     public sealed class ColorCsvRow
     {
@@ -16,6 +17,7 @@ namespace ExportRgbColors
         public int G { get; set; }
         public int B { get; set; }
         public string Layer { get; set; }
+        public string Description { get; set; }
 
         public string RGB
         {
@@ -24,14 +26,17 @@ namespace ExportRgbColors
     }
 
     /// <summary>
-    /// CSV formatting for ColorIndex, RGB, R, G, B, Layer. Kept free of Bentley
-    /// types so it can be unit-tested without MicroStation.
+    /// CSV formatting for ColorIndex, RGB, R, G, B, Layer, Description. Kept
+    /// free of Bentley types so it can be unit-tested without MicroStation.
     /// </summary>
     public static class CsvUtil
     {
         public const int ByLevelIndex = -1;
 
-        public static readonly string[] Header = { "ColorIndex", "RGB", "R", "G", "B", "Layer" };
+        public static readonly string[] Header =
+        {
+            "ColorIndex", "RGB", "R", "G", "B", "Layer", "Description"
+        };
 
         public static string FormatRgb(int r, int g, int b)
         {
@@ -40,26 +45,30 @@ namespace ExportRgbColors
 
         public static ColorCsvRow TableRow(int colorIndex, int r, int g, int b)
         {
+            return TableRow(colorIndex, r, g, b, string.Empty, string.Empty);
+        }
+
+        public static ColorCsvRow TableRow(int colorIndex, int r, int g, int b, string layer, string description)
+        {
             return new ColorCsvRow
             {
                 ColorIndex = colorIndex.ToString(CultureInfo.InvariantCulture),
                 R = r,
                 G = g,
                 B = b,
-                Layer = string.Empty
+                Layer = layer ?? string.Empty,
+                Description = description ?? string.Empty
             };
         }
 
         public static ColorCsvRow ByLevelRow(string layer, int r, int g, int b)
         {
-            return new ColorCsvRow
-            {
-                ColorIndex = ByLevelIndex.ToString(CultureInfo.InvariantCulture),
-                R = r,
-                G = g,
-                B = b,
-                Layer = layer ?? string.Empty
-            };
+            return ByLevelRow(layer, r, g, b, string.Empty);
+        }
+
+        public static ColorCsvRow ByLevelRow(string layer, int r, int g, int b, string description)
+        {
+            return TableRow(ByLevelIndex, r, g, b, layer, description);
         }
 
         public static string FormatRow(ColorCsvRow row)
@@ -70,7 +79,8 @@ namespace ExportRgbColors
                 row.R.ToString(CultureInfo.InvariantCulture),
                 row.G.ToString(CultureInfo.InvariantCulture),
                 row.B.ToString(CultureInfo.InvariantCulture),
-                Escape(row.Layer ?? string.Empty));
+                Escape(row.Layer ?? string.Empty),
+                Escape(row.Description ?? string.Empty));
         }
 
         public static void Write(string path, IEnumerable<ColorCsvRow> rows)

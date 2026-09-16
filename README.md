@@ -1,6 +1,6 @@
 # Export ColorIndex and RGB from MicroStation
 
-MicroStation CONNECT / 2023+ **add-in** that exports **ColorIndex and RGB on every row**. After install it adds an **Automation** tab to the Drawing ribbon and puts **Export RGB Colors** on that tab.
+MicroStation CONNECT / 2023+ **add-in** that exports **ColorIndex, RGB, Layer, and Description** on every row. After install it adds an **Automation** tab to the Drawing ribbon and puts **Export RGB Colors** on that tab.
 
 ## Install (once)
 
@@ -46,21 +46,22 @@ RGBCSV DIALOG
 ## CSV
 
 ```csv
-ColorIndex,RGB,R,G,B,Layer
-0,"0, 0, 0",0,0,0,
-1,"0, 0, 255",0,0,255,
+ColorIndex,RGB,R,G,B,Layer,Description
+0,"0, 0, 0",0,0,0,,
+1,"0, 0, 255",0,0,255,EQPM,Equipment
+1,"0, 0, 255",0,0,255,R-LITE,Road lighting
 ```
 
-Every color-table index `0`–`255` is written, including colors not assigned to a layer.
+Every color-table index `0`–`255` is written, including colors not assigned to a layer. **Layer** and **Description** come from each MicroStation level that uses that color (Level Manager name and description). Unused colors keep those two columns blank. If several levels share a color, that ColorIndex is repeated once per level.
 
 ## Key-ins
 
 | Key-in | Action |
 | --- | --- |
-| `RGBCSV DIALOG` | Add-in form (ColorIndex + RGB), then export |
+| `RGBCSV DIALOG` | Add-in form (ColorIndex, RGB, Layer, Description), then export |
 | `RGBCSV EXPORT` | Same form |
-| `RGBCSV EXPORT C:\temp\file-colors.csv` | Write CSV directly |
-| `RGBCSV TABLE` | All 256 color codes with ColorIndex + RGB |
+| `RGBCSV EXPORT C:\temp\file-colors.csv` | Write CSV directly (includes Layer and Description) |
+| `RGBCSV TABLE` | All 256 color codes with ColorIndex, RGB, Layer, Description |
 
 ## Project layout
 

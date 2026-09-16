@@ -11,9 +11,9 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <Product>Export RGB Colors from MicroStation</Product>
-    <Description>MicroStation CONNECT/2023+ add-in that exports ColorIndex and RGB together for every color-table code.</Description>
+    <Description>MicroStation CONNECT/2023+ add-in that exports ColorIndex, RGB, Layer, and Description for every color-table code.</Description>
     <Authors>Golnaz Vakili</Authors>
-    <Version>1.3.0</Version>
+    <Version>1.4.0</Version>
     <!--
       Point this at the MicroStation folder that contains ustation.dll, or set
       any of: MicroStationDir, MS, MSMDIR, MICROSTATION_LOCATION.
