@@ -19,11 +19,19 @@ namespace ExportRgbColors
         }
     }
 
+    internal sealed class ColorExportData
+    {
+        public List<ColorCsvRow> Rows { get; set; }
+        public int ColorTableRows { get; set; }
+        public int LevelRows { get; set; }
+        public int Skipped { get; set; }
+    }
+
     internal static class ColorCsvExporter
     {
         public const int ColorTableSize = ColorTableCsvBuilder.ColorTableSize;
 
-        public static ExportResult Export(string csvPath, bool includeColorTable, bool includeLevels)
+        public static ColorExportData Collect(bool includeColorTable, bool includeLevels)
         {
             DgnFile dgnFile = Session.Instance.GetActiveDgnFile();
             DgnModel dgnModel = Session.Instance.GetActiveDgnModel();
@@ -44,18 +52,31 @@ namespace ExportRgbColors
             if (includeLevels)
                 skipped += AppendLevelColors(dgnFile, dgnModel, rows);
 
+            return new ColorExportData
+            {
+                Rows = rows,
+                ColorTableRows = tableRows,
+                LevelRows = rows.Count - tableRows,
+                Skipped = skipped
+            };
+        }
+
+        public static ExportResult Export(string csvPath, bool includeColorTable, bool includeLevels)
+        {
+            ColorExportData data = Collect(includeColorTable, includeLevels);
+
             string directory = Path.GetDirectoryName(csvPath);
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            CsvUtil.Write(csvPath, rows);
+            CsvUtil.Write(csvPath, data.Rows);
 
             return new ExportResult
             {
                 Path = csvPath,
-                ColorTableRows = tableRows,
-                LevelRows = rows.Count - tableRows,
-                Skipped = skipped
+                ColorTableRows = data.ColorTableRows,
+                LevelRows = data.LevelRows,
+                Skipped = data.Skipped
             };
         }
 

@@ -61,7 +61,7 @@ Private Sub WriteColorTableRows(ByVal fileNum As Integer, ByRef col As Variant)
 
     For i = 0 To 255
         ExtractRGB PackedColorAt(col, i), r, g, b
-        Print #fileNum, CStr(i) & "," & CStr(r) & "," & CStr(g) & "," & CStr(b) & ","
+        Print #fileNum, CStr(i) & "," & CsvEscape(CStr(r) & ", " & CStr(g) & ", " & CStr(b)) & "," & CStr(r) & "," & CStr(g) & "," & CStr(b) & ","
     Next
 End Sub
 
@@ -84,7 +84,7 @@ Private Sub WriteLevelRows(ByVal fileNum As Integer, ByRef col As Variant)
             ExtractRGB colorIndex, r, g, b
         End If
 
-        Print #fileNum, "-1," & CStr(r) & "," & CStr(g) & "," & CStr(b) & "," & CsvEscape(lvl.Name)
+        Print #fileNum, "-1," & CsvEscape(CStr(r) & ", " & CStr(g) & ", " & CStr(b)) & "," & CStr(r) & "," & CStr(g) & "," & CStr(b) & "," & CsvEscape(lvl.Name)
 NextLevel:
         On Error GoTo 0
     Next
@@ -107,7 +107,7 @@ Private Sub ExportColorCodes(ByVal includeLevels As Boolean)
 
     fileNum = FreeFile
     Open csvPath For Output As #fileNum
-    Print #fileNum, "ColorIndex,R,G,B,Layer"
+    Print #fileNum, "ColorIndex,RGB,R,G,B,Layer"
     WriteColorTableRows fileNum, col
     If includeLevels Then
         WriteLevelRows fileNum, col

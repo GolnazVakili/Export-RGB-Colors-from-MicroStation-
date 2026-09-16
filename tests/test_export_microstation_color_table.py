@@ -29,13 +29,13 @@ class ExportColorTableScriptTests(unittest.TestCase):
         with path.open(encoding="utf-8-sig", newline="") as handle:
             rows = list(csv.reader(handle))
 
-        self.assertEqual(rows[0], ["ColorIndex", "R", "G", "B", "Layer"])
+        self.assertEqual(rows[0], ["ColorIndex", "RGB", "R", "G", "B", "Layer"])
         self.assertEqual(len(rows), 258)
-        self.assertEqual(rows[1], ["0", "0", "0", "0", ""])
-        self.assertEqual(rows[2], ["1", "0", "0", "255", ""])
-        self.assertEqual(rows[5], ["4", "255", "0", "0", ""])
-        self.assertEqual(rows[256], ["255", "0", "0", "0", ""])
-        self.assertEqual(rows[257], ["-1", "0", "0", "255", "EQPM"])
+        self.assertEqual(rows[1], ["0", "0, 0, 0", "0", "0", "0", ""])
+        self.assertEqual(rows[2], ["1", "0, 0, 255", "0", "0", "255", ""])
+        self.assertEqual(rows[5], ["4", "255, 0, 0", "255", "0", "0", ""])
+        self.assertEqual(rows[256], ["255", "0, 0, 0", "0", "0", "0", ""])
+        self.assertEqual(rows[257], ["-1", "0, 0, 255", "0", "0", "255", "EQPM"])
 
 
 if __name__ == "__main__":

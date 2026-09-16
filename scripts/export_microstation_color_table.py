@@ -54,12 +54,12 @@ def packed_by_index(values) -> list[int]:
 def write_csv(path: Path, packed: list[int], level_rows: list[tuple[str, int, int, int]]) -> None:
     with path.open("w", encoding="utf-8-sig", newline="") as handle:
         writer = csv.writer(handle)
-        writer.writerow(["ColorIndex", "R", "G", "B", "Layer"])
+        writer.writerow(["ColorIndex", "RGB", "R", "G", "B", "Layer"])
         for index in range(COLOR_TABLE_SIZE):
             r, g, b = unpack_colorref(packed[index] if index < len(packed) else 0)
-            writer.writerow([index, r, g, b, ""])
+            writer.writerow([index, f"{r}, {g}, {b}", r, g, b, ""])
         for name, r, g, b in level_rows:
-            writer.writerow([-1, r, g, b, name])
+            writer.writerow([-1, f"{r}, {g}, {b}", r, g, b, name])
 
 
 def main(argv: list[str]) -> int:
@@ -68,7 +68,7 @@ def main(argv: list[str]) -> int:
     except ImportError as exc:
         raise SystemExit(
             "pywin32 is required on Windows (pip install pywin32). "
-            "Or use vba/ExportAllColorCodes.bas inside MicroStation."
+            "Prefer the ExportRgbColors add-in: mdl load ExportRgbColors, then RGBCSV DIALOG."
         ) from exc
 
     app = win32com.client.GetActiveObject("MicroStationDGN.Application")

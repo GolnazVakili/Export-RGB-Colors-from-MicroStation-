@@ -8,14 +8,21 @@ namespace ExportRgbColors
 {
     /// <summary>
     /// Key-in handlers registered from Commands.xml.
-    ///   RGBCSV EXPORT [path]  — all color-table codes with RGB
-    ///   RGBCSV TABLE [path]   — same (all codes, no layer filter)
-    ///   RGBCSV DIALOG
+    ///   RGBCSV EXPORT [path]  — ColorIndex and RGB for all color-table codes
+    ///   RGBCSV TABLE [path]   — same
+    ///   RGBCSV DIALOG         — add-in form showing ColorIndex and RGB together
     /// </summary>
     public static class KeyinCommands
     {
         public static void Export(string unparsed)
         {
+            // No path → add-in dialog so ColorIndex and RGB are shown together.
+            if (string.IsNullOrEmpty(NormalizePath(unparsed)))
+            {
+                Dialog(unparsed);
+                return;
+            }
+
             ExportToPath(unparsed, includeColorTable: true, includeLevels: false);
         }
 
@@ -85,7 +92,7 @@ namespace ExportRgbColors
 
             ExportResult result = ColorCsvExporter.Export(path, includeColorTable, includeLevels);
             string summary = string.Format(
-                "Wrote {0} rows ({1} color-table codes with RGB, including unused; {2} level) to {3}",
+                "Wrote {0} rows with ColorIndex and RGB together ({1} color codes, {2} level) to {3}",
                 result.TotalRows,
                 result.ColorTableRows,
                 result.LevelRows,

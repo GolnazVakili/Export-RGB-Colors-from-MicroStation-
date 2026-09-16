@@ -29,6 +29,7 @@ namespace ExportRgbColors.Tests
             for (int i = 0; i < 256; i++)
             {
                 Assert.Equal(i.ToString(), table[i].ColorIndex);
+                Assert.Equal(CsvUtil.FormatRgb(table[i].R, table[i].G, table[i].B), table[i].RGB);
                 Assert.Equal(string.Empty, table[i].Layer);
             }
 
@@ -57,8 +58,8 @@ namespace ExportRgbColors.Tests
 
             Assert.Equal(256, rows.Count);
             Assert.DoesNotContain(rows, row => row.ColorIndex == "-1");
-            Assert.Equal("3,12,34,56,", CsvUtil.FormatRow(rows[3]));
-            Assert.Equal("255,0,0,0,", CsvUtil.FormatRow(rows[255]));
+            Assert.Equal("3,\"12, 34, 56\",12,34,56,", CsvUtil.FormatRow(rows[3]));
+            Assert.Equal("255,\"0, 0, 0\",0,0,0,", CsvUtil.FormatRow(rows[255]));
         }
 
         [Fact]
@@ -80,11 +81,11 @@ namespace ExportRgbColors.Tests
                     .Split('\n');
 
                 Assert.Equal(257, lines.Length);
-                Assert.Equal("ColorIndex,R,G,B,Layer", lines[0]);
-                Assert.Equal("0,0,0,0,", lines[1]);
-                Assert.Equal("1,0,0,255,", lines[2]);
-                Assert.Equal("2,0,255,0,", lines[3]);
-                Assert.Equal("255,0,0,0,", lines[256]);
+                Assert.Equal("ColorIndex,RGB,R,G,B,Layer", lines[0]);
+                Assert.Equal("0,\"0, 0, 0\",0,0,0,", lines[1]);
+                Assert.Equal("1,\"0, 0, 255\",0,0,255,", lines[2]);
+                Assert.Equal("2,\"0, 255, 0\",0,255,0,", lines[3]);
+                Assert.Equal("255,\"0, 0, 0\",0,0,0,", lines[256]);
             }
             finally
             {

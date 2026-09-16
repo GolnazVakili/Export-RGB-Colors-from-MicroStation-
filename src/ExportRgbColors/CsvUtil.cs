@@ -6,8 +6,8 @@ using System.Text;
 namespace ExportRgbColors
 {
     /// <summary>
-    /// One exported color row. ColorIndex is always present (0–255 for the color
-    /// table, −1 for ByLevel). Layer is blank unless the row belongs to a level.
+    /// One exported color row. ColorIndex and RGB are always written together
+    /// (the Index dialog Color field plus the RGB field).
     /// </summary>
     public sealed class ColorCsvRow
     {
@@ -16,17 +16,27 @@ namespace ExportRgbColors
         public int G { get; set; }
         public int B { get; set; }
         public string Layer { get; set; }
+
+        public string RGB
+        {
+            get { return CsvUtil.FormatRgb(R, G, B); }
+        }
     }
 
     /// <summary>
-    /// CSV formatting for ColorIndex, R, G, B, Layer. Kept free of Bentley types
-    /// so it can be unit-tested without MicroStation.
+    /// CSV formatting for ColorIndex, RGB, R, G, B, Layer. Kept free of Bentley
+    /// types so it can be unit-tested without MicroStation.
     /// </summary>
     public static class CsvUtil
     {
         public const int ByLevelIndex = -1;
 
-        public static readonly string[] Header = { "ColorIndex", "R", "G", "B", "Layer" };
+        public static readonly string[] Header = { "ColorIndex", "RGB", "R", "G", "B", "Layer" };
+
+        public static string FormatRgb(int r, int g, int b)
+        {
+            return string.Format(CultureInfo.InvariantCulture, "{0}, {1}, {2}", r, g, b);
+        }
 
         public static ColorCsvRow TableRow(int colorIndex, int r, int g, int b)
         {
@@ -56,6 +66,7 @@ namespace ExportRgbColors
         {
             return string.Join(",",
                 Escape(row.ColorIndex ?? string.Empty),
+                Escape(row.RGB),
                 row.R.ToString(CultureInfo.InvariantCulture),
                 row.G.ToString(CultureInfo.InvariantCulture),
                 row.B.ToString(CultureInfo.InvariantCulture),
